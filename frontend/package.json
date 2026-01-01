@@ -1,0 +1,22 @@
+{
+    "name": "sentinelkey-frontend",
+    "private": true,
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "lit": "^3.1.0",
+        "zustand": "^4.5.0",
+        "@vaadin/router": "^1.7.5",
+        "workbox-window": "^7.0.0",
+        "dompurify": "^3.0.8"
+    },
+    "devDependencies": {
+        "vite": "^5.0.0",
+        "vite-plugin-pwa": "^0.17.0"
+    }
+}

@@ -1,0 +1,32 @@
+# Maven
+backend/target/
+*.war
+*.ear
+*.jar
+
+# Node.js / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+.npm
+.eslintcache
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Docker (if local mounts are used)
+postgres_data/
+redis_data/
+minio_data/
