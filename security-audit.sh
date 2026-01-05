@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "Starting SentinelKey Security Audit..."
+echo "Starting SecureTeam Access Security Audit..."
 
 # 1. Trivy Scan (Container & FS)
 echo "Running Trivy Vulnerability Scanner..."

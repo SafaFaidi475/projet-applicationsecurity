@@ -6,8 +6,8 @@ export default defineConfig({
         VitePWA({
             registerType: 'autoUpdate',
             manifest: {
-                name: 'SentinelKey Access Broker',
-                short_name: 'SentinelKey',
+                name: 'SecureTeam Access Access Broker',
+                short_name: 'SecureTeam Access',
                 description: 'Secure Enterprise Access Broker PWA',
                 theme_color: '#ffffff',
                 icons: [

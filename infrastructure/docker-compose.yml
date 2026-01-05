@@ -2,11 +2,11 @@ services:
   # PostgreSQL 16.1 with RLS and pgcrypto support
   postgres:
     image: postgres:16.1
-    container_name: sentinelkey-postgres
+    container_name: SecureTeam Access-postgres
     environment:
       POSTGRES_USER: sentinel_admin
       POSTGRES_PASSWORD: secure_password_123!
-      POSTGRES_DB: sentinelkey_db
+      POSTGRES_DB: SecureTeam Access_db
     ports:
       - "5432:5432"
     volumes:
@@ -15,7 +15,7 @@ services:
     networks:
       - sentinel-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sentinel_admin -d sentinelkey_db"]
+      test: ["CMD-SHELL", "pg_isready -U sentinel_admin -d SecureTeam Access_db"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -23,7 +23,7 @@ services:
   # Redis 7.2 (Simulated Cluster Mode for Dev)
   redis:
     image: redis:7.2
-    container_name: sentinelkey-redis
+    container_name: SecureTeam Access-redis
     ports:
       - "6379:6379"
     volumes:
@@ -35,7 +35,7 @@ services:
   # MinIO (S3-compatible Object Storage for Steganography Cover Images)
   minio:
     image: minio/minio
-    container_name: sentinelkey-minio
+    container_name: SecureTeam Access-minio
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -56,7 +56,7 @@ services:
   # Traefik Reverse Proxy (Simulated TLS 1.3 Termination)
   traefik:
     image: traefik:v3.0
-    container_name: sentinelkey-traefik
+    container_name: SecureTeam Access-traefik
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"

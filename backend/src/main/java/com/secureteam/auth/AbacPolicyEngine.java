@@ -2,11 +2,15 @@ package com.secureteam.auth;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 @ApplicationScoped
 public class AbacPolicyEngine {
+
+    private static final Logger LOGGER = Logger.getLogger(AbacPolicyEngine.class.getName());
 
     /**
      * Evaluates access based on Subject, Resource, and Environment attributes.
@@ -17,7 +21,7 @@ public class AbacPolicyEngine {
         // 1. Temporal Check: Account Expiration (Mandatory for SecureTeam Access)
         Long accessExpiry = (Long) subject.get("access_expiry");
         if (accessExpiry != null && System.currentTimeMillis() > accessExpiry) {
-            System.out.println("[DENY] Access Expired for subject: " + subject.get("subject"));
+            LOGGER.warning("[DENY] Access Expired for subject: " + subject.get("subject"));
             return false;
         }
 
@@ -25,22 +29,30 @@ public class AbacPolicyEngine {
         String expectedFingerprint = (String) subject.get("device_id");
         String currentFingerprint = (String) env.get("device_id");
         if (expectedFingerprint != null && !expectedFingerprint.equals(currentFingerprint)) {
-            System.out.println("[DENY] Device Fingerprint Mismatch!");
+            LOGGER.warning("[DENY] Device Fingerprint Mismatch!");
             return false;
         }
 
         // 3. Project-Based Access Control
         String requiredProject = (String) resource.get("project_id");
-        List<String> authorizedProjects = (List<String>) subject.get("projects");
+        Object authorizedProjectsObj = subject.get("projects");
+        List<String> authorizedProjects = new ArrayList<>();
+        if (authorizedProjectsObj instanceof List) {
+            for (Object obj : (List<?>) authorizedProjectsObj) {
+                if (obj instanceof String) {
+                    authorizedProjects.add((String) obj);
+                }
+            }
+        }
 
-        if (requiredProject != null && (authorizedProjects == null || !authorizedProjects.contains(requiredProject))) {
-            System.out.println("[DENY] Subject not authorized for project: " + requiredProject);
+        if (requiredProject != null
+                && (authorizedProjects.isEmpty() || !authorizedProjects.contains(requiredProject))) {
+            LOGGER.warning("[DENY] Subject not authorized for project: " + requiredProject);
             return false;
         }
 
         // 4. Time-of-Day Constraints (JIT Logic)
         String department = (String) subject.get("department");
-        String resourceType = (String) resource.get("type");
 
         if ("external_collaborator".equals(department) || "engineering".equals(department)) {
             LocalTime now = LocalTime.now();
@@ -48,7 +60,7 @@ public class AbacPolicyEngine {
             LocalTime end = LocalTime.parse("18:00");
 
             if (now.isBefore(start) || now.isAfter(end)) {
-                System.out.println("[DENY] Access outside of authorized hours.");
+                LOGGER.warning("[DENY] Access outside of authorized hours.");
                 return false;
             }
         }
