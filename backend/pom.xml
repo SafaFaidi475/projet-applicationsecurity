@@ -20,13 +20,14 @@
         <version.aerogear>1.0.0</version.aerogear>
         <version.bouncycastle>1.77</version.bouncycastle>
         <version.opencv>4.8.0-0</version.opencv>
-        <version.redis>5.1.0</version.redis>
-        <version.postgresql>42.7.1</version.postgresql> <!-- Compatible with PG 16 -->
+        <version.redis>5.1.2</version.redis>
+        <version.postgresql>42.7.2</version.postgresql>
+        <version.junit>5.10.0</version.junit>
+        <version.mockito>5.6.0</version.mockito>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!-- WildFly BOM for Jakarta EE 11 provided dependencies -->
             <dependency>
                 <groupId>org.wildfly.bom</groupId>
                 <artifactId>wildfly-ee-with-tools</artifactId>
@@ -66,10 +67,10 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-             <groupId>dev.paseto</groupId>
-             <artifactId>jpaseto-sodium</artifactId>
-             <version>${version.jpaseto}</version>
-             <scope>runtime</scope>
+            <groupId>dev.paseto</groupId>
+            <artifactId>jpaseto-sodium</artifactId>
+            <version>${version.jpaseto}</version>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- TOTP 2FA -->
@@ -78,6 +79,7 @@
             <artifactId>aerogear-otp-java</artifactId>
             <version>${version.aerogear}</version>
         </dependency>
+
         <!-- QR Code Generation for TOTP -->
         <dependency>
             <groupId>com.google.zxing</groupId>
@@ -97,12 +99,22 @@
             <version>${version.bouncycastle}</version>
         </dependency>
 
+        <!-- MicroProfile Config for Externalized Secrets -->
+        <dependency>
+            <groupId>org.eclipse.microprofile.config</groupId>
+            <artifactId>microprofile-config-api</artifactId>
+            <version>3.0.3</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- OpenCV for Steganography -->
+        <!--
         <dependency>
             <groupId>org.openpnp</groupId>
             <artifactId>opencv</artifactId>
             <version>${version.opencv}</version>
         </dependency>
+        -->
 
         <!-- Redis Client -->
         <dependency>
@@ -129,11 +141,13 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <version>${version.junit}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <version>${version.mockito}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -247,4 +247,30 @@ com.sentinelkey.postgres.url=jdbc:postgresql://localhost:5432/sentinelkey_db
 
 **Document Version**: 1.0
 **Last Updated**: January 1, 2026
-**Status**: Phases 1-5 Implemented (Infrastructure, IAM, API, Stego, Frontend)
+**Status**: Phases 1-5 Implemented (Infrastructure, IAM, API, Stego, Frontend) + Security Hardening (Jan 2026)
+
+---
+
+## 🛠️ Remediation & Hardening (January 2026)
+
+The following security enhancements were applied to address critical vulnerabilities identified during a security audit:
+
+### 1. Replay Attack Prevention (JTI Management)
+- **Vulnerability**: Token JTI (JSON Token Identifier) was checked but never stored in Redis, rendering replay prevention ineffective.
+- **Fix**: Updated `PasetoService.java` to store validated JTIs in Redis with a TTL matching the token's expiration. Subsequent attempts to use the same token are now correctly blocked.
+
+### 2. Cryptographic Secret Management
+- **Vulnerability**: Hardcoded master passwords and static salts in `EncryptionService.java`.
+- **Fix**: Externalized all sensitive secrets to `microprofile-config.properties`. In production, these are designed to be overridden via environment variables or a secret vault.
+
+### 3. Session Stability & Persistent Keys
+- **Vulnerability**: PASETO keys were regenerated on every service restart, causing immediate invalidation of all active user sessions.
+- **Fix**: Implemented key loading from configuration in `PasetoService.java`. This allows for persistent keys across restarts and horizontal scaling.
+
+### 4. Dependency Hardening
+- **Security Updates**:
+    - Updated `postgresql` driver to `42.7.2`.
+    - Updated `jedis` (Redis client) to `5.1.2`.
+    - Added `microprofile-config-api` for standard configuration management.
+
+---

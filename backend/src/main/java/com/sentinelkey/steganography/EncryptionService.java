@@ -10,6 +10,8 @@ import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.util.Base64;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
 public class EncryptionService {
@@ -19,15 +21,19 @@ public class EncryptionService {
     private static final int KEY_LENGTH = 256;
     private static final int ITERATIONS = 100000;
 
-    // In production, fetch from Vault
-    private static final String MASTER_PASSWORD = "CHANGE_THIS_SECURE_PASSWORD";
-    private static final String SALT = "STATIC_SALT_FOR_EXAMPLE"; // Use dynamic salt in prod
+    @Inject
+    @ConfigProperty(name = "com.sentinelkey.steganography.master-password")
+    private String masterPassword;
+
+    @Inject
+    @ConfigProperty(name = "com.sentinelkey.steganography.salt")
+    private String salt;
 
     public byte[] encrypt(byte[] data) throws Exception {
         byte[] iv = new byte[GCM_IV_LENGTH];
         new SecureRandom().nextBytes(iv);
 
-        SecretKey key = deriveKey(MASTER_PASSWORD, SALT);
+        SecretKey key = deriveKey(masterPassword, salt);
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
         cipher.init(Cipher.ENCRYPT_MODE, key, spec);
@@ -53,7 +59,7 @@ public class EncryptionService {
         byte[] ciphertext = new byte[ciphertextLength];
         System.arraycopy(encryptedData, GCM_IV_LENGTH, ciphertext, 0, ciphertextLength);
 
-        SecretKey key = deriveKey(MASTER_PASSWORD, SALT);
+        SecretKey key = deriveKey(masterPassword, salt);
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
         cipher.init(Cipher.DECRYPT_MODE, key, spec);
