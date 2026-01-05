@@ -1,4 +1,4 @@
-package com.sentinelkey.steganography;
+package com.secureteam.steganography;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -22,11 +22,11 @@ public class EncryptionService {
     private static final int ITERATIONS = 100000;
 
     @Inject
-    @ConfigProperty(name = "com.sentinelkey.steganography.master-password")
+    @ConfigProperty(name = "com.secureteam.steganography.master-password")
     private String masterPassword;
 
     @Inject
-    @ConfigProperty(name = "com.sentinelkey.steganography.salt")
+    @ConfigProperty(name = "com.secureteam.steganography.salt")
     private String salt;
 
     public byte[] encrypt(byte[] data) throws Exception {

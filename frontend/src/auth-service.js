@@ -1,7 +1,7 @@
 export class AuthService {
 
     constructor() {
-        this.token = localStorage.getItem('sentinel_token');
+        this.token = localStorage.getItem('secureteam_token');
         // NOTE: In production, use encrypted IndexedDB or opaque HTTP-only cookies if possible.
         // localStorage is used here for zero-dependency simplicity in this generated file.
     }
@@ -15,14 +15,14 @@ export class AuthService {
         const verifier = this.generateCodeVerifier();
         const challenge = await this.generateCodeChallenge(verifier);
 
-        // 2. Mock API Call to Backend (IAM Service)
+        // 2. Mock API Call to Backend (SecureTeam IAM)
         // In real flow, this redirects to /authorize
-        console.log(`Initiating OAuth 2.1 PKCE with Challenge: ${challenge}`);
+        console.log(`SecureTeam Auth: Initiating OAuth 2.1 PKCE with Challenge: ${challenge}`);
 
         // Simulate successful token exchange
         if (username === 'admin' && password === 'password') {
-            this.token = "mock_paseto_token_v4_public";
-            localStorage.setItem('sentinel_token', this.token);
+            this.token = "mock_secureteam_paseto_v4_token";
+            localStorage.setItem('secureteam_token', this.token);
             return true;
         } else {
             throw new Error("Invalid credentials");

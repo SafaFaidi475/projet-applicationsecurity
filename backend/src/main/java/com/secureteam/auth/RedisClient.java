@@ -1,4 +1,4 @@
-package com.sentinelkey.auth;
+package com.secureteam.auth;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;

@@ -1,4 +1,4 @@
-package com.sentinelkey.auth;
+package com.secureteam.auth;
 
 import dev.paseto.jpaseto.Paseto;
 import dev.paseto.jpaseto.PasetoParser;
@@ -18,7 +18,7 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
- * PASETO Token Service for SentinelKey.
+ * PASETO Token Service for SecureTeam Access.
  * Implements PASETO v2 (Public/Local) as strictly required by 'jpaseto 0.7.x'.
  * Note: Spec mentions v4, but jpaseto 0.7.x primarily targets v1/v2.
  * We use v2 Public (Ed25519) for asymmetric and v2 Local (XChaCha20) for
@@ -28,11 +28,11 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 public class PasetoService {
 
     @Inject
-    @ConfigProperty(name = "com.sentinelkey.auth.paseto.public-key", defaultValue = "")
+    @ConfigProperty(name = "com.secureteam.auth.paseto.public-key", defaultValue = "")
     private String configuredPublicKey;
 
     @Inject
-    @ConfigProperty(name = "com.sentinelkey.auth.paseto.private-key", defaultValue = "")
+    @ConfigProperty(name = "com.secureteam.auth.paseto.private-key", defaultValue = "")
     private String configuredPrivateKey;
 
     private KeyPair keyPair; // For v2.public (Asymmetric)
@@ -59,12 +59,16 @@ public class PasetoService {
     public String createPublicToken(String subject, String audience, String deviceId) {
         String jti = UUID.randomUUID().toString();
 
+        // SecureTeam Access: Default to 1-hour session with project context
         return Pasetos.V2.PUBLIC.builder()
                 .setPrivateKey(keyPair.getPrivate())
                 .setSubject(subject)
                 .setAudience(audience)
                 .setIssuer("iam.yourdomain.me")
                 .setExpiration(Instant.now().plus(1, ChronoUnit.HOURS))
+                .claim("dept", "external_collaborator")
+                .claim("access_expiry", System.currentTimeMillis() + 3600000) // 1H from now
+                .claim("projects", java.util.Arrays.asList("Alpha", "Beta"))
                 .claim("device_id", deviceId)
                 .claim("jti", jti)
                 .compact();

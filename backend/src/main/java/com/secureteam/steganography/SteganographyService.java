@@ -1,4 +1,4 @@
-package com.sentinelkey.steganography;
+package com.secureteam.steganography;
 
 import jakarta.enterprise.context.ApplicationScoped;
 

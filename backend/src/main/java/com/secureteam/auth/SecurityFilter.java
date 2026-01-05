@@ -1,4 +1,4 @@
-package com.sentinelkey.auth;
+package com.secureteam.auth;
 
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
@@ -39,22 +39,29 @@ public class SecurityFilter implements ContainerRequestFilter {
             // Enforce audience "api.yourdomain.me" for internal API
             Paseto paseto = pasetoService.validatePublicToken(token, "api.yourdomain.me");
 
-            // 2. Extract Claims for ABAC
+            // 2. Extract Claims for ABAC (SecureTeam Access Implementation)
             Map<String, Object> subject = new HashMap<>();
             subject.put("subject", paseto.getClaims().getSubject());
-            // In reality, fetch roles/dept from DB using subject
-            subject.put("department", "engineering"); // Mocked for this phase
+            subject.put("department", paseto.getClaims().get("dept", String.class));
+            subject.put("access_expiry", paseto.getClaims().get("access_expiry", Long.class));
+            subject.put("projects", paseto.getClaims().get("projects", java.util.List.class));
+            subject.put("device_id", paseto.getClaims().get("device_id", String.class));
 
             Map<String, Object> resource = new HashMap<>();
-            resource.put("type", "audit_logs"); // Should be derived from URL path
+            resource.put("type", "secure_resource");
+            // Extract project_id from header or URL path
+            String projectId = requestContext.getHeaderString("X-Project-ID");
+            resource.put("project_id", projectId);
 
             Map<String, Object> env = new HashMap<>();
-            // Env populated in engine
+            // Extract real-time device ID from header for comparison
+            env.put("device_id", requestContext.getHeaderString("X-Device-Fingerprint"));
 
-            // 3. Enforce ABAC
+            // 3. Enforce ABAC (Temporal & Context-Aware Decision)
             if (!abacPolicyEngine.evaluate(subject, resource, env)) {
                 requestContext
-                        .abortWith(Response.status(Response.Status.FORBIDDEN).entity("ABAC Policy Denial").build());
+                        .abortWith(Response.status(Response.Status.FORBIDDEN)
+                                .entity("SecureTeam Access Denial: Context or Time Constraint Violated").build());
             }
 
         } catch (Exception e) {

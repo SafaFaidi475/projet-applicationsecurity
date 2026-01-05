@@ -1,4 +1,4 @@
-package com.sentinelkey.storage;
+package com.secureteam.storage;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import java.io.InputStream;

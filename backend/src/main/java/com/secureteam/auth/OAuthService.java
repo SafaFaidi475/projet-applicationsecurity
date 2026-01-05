@@ -1,4 +1,4 @@
-package com.sentinelkey.auth;
+package com.secureteam.auth;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

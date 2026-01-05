@@ -1,4 +1,4 @@
-package com.sentinelkey.auth;
+package com.secureteam.auth;
 
 import org.jboss.aerogear.security.otp.Totp;
 import org.jboss.aerogear.security.otp.api.Base32;
