@@ -26,6 +26,23 @@
         <version.mockito>5.6.0</version.mockito>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>jboss-public-repository-group</id>
+            <name>JBoss Public Repository Group</name>
+            <url>https://repository.jboss.org/nexus/content/groups/public-jboss/</url>
+            <layout>default</layout>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </snapshots>
+        </repository>
+    </repositories>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -64,13 +81,16 @@
             <groupId>dev.paseto</groupId>
             <artifactId>jpaseto-impl</artifactId>
             <version>${version.jpaseto}</version>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>dev.paseto</groupId>
-            <artifactId>jpaseto-sodium</artifactId>
+            <artifactId>jpaseto-jackson</artifactId>
             <version>${version.jpaseto}</version>
-            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>dev.paseto</groupId>
+            <artifactId>jpaseto-bouncy-castle</artifactId>
+            <version>${version.jpaseto}</version>
         </dependency>
 
         <!-- TOTP 2FA -->
@@ -153,7 +173,7 @@
     </dependencies>
 
     <build>
-        <finalName>SecureTeam Access</finalName>
+        <finalName>secureteam-access</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -170,6 +190,20 @@
                 <version>3.4.0</version>
                 <configuration>
                     <failOnMissingWebXml>false</failOnMissingWebXml>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
+                <version>5.0.0.Final</version>
+                <configuration>
+                    <hostname>localhost</hostname>
+                    <port>9990</port>
+                    <javaOpts>
+                        <javaOpt>-Djava.net.preferIPv4Stack=true</javaOpt>
+                        <javaOpt>-Djboss.bind.address=0.0.0.0</javaOpt>
+                        <javaOpt>-Djboss.bind.address.management=0.0.0.0</javaOpt>
+                    </javaOpts>
                 </configuration>
             </plugin>
         </plugins>

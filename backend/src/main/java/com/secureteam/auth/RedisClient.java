@@ -14,10 +14,15 @@ public class RedisClient {
 
     @PostConstruct
     public void init() {
-        // Simulated Cluster connection (Standalone for dev, but interface ready for cluster)
-        JedisPoolConfig poolConfig = new JedisPoolConfig();
-        poolConfig.setMaxTotal(128);
-        this.jedisPool = new JedisPool(poolConfig, "localhost", 6379);
+        try {
+            JedisPoolConfig poolConfig = new JedisPoolConfig();
+            poolConfig.setMaxTotal(128);
+            this.jedisPool = new JedisPool(poolConfig, "127.0.0.1", 6379);
+        } catch (Exception e) {
+            // Log but don't crash
+            java.util.logging.Logger.getLogger(RedisClient.class.getName())
+                    .severe("Redis init failed: " + e.getMessage());
+        }
     }
 
     public boolean exists(String key) {

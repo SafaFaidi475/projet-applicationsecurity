@@ -12,6 +12,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import java.util.Optional;
+
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -28,12 +30,12 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 public class PasetoService {
 
     @Inject
-    @ConfigProperty(name = "com.secureteam.auth.paseto.public-key", defaultValue = "")
-    private String configuredPublicKey;
+    @ConfigProperty(name = "com.secureteam.auth.paseto.public-key")
+    private Optional<String> configuredPublicKey;
 
     @Inject
-    @ConfigProperty(name = "com.secureteam.auth.paseto.private-key", defaultValue = "")
-    private String configuredPrivateKey;
+    @ConfigProperty(name = "com.secureteam.auth.paseto.private-key")
+    private Optional<String> configuredPrivateKey;
 
     private KeyPair keyPair; // For v2.public (Asymmetric)
     private SecretKey secretKey; // For v2.local (Symmetric)

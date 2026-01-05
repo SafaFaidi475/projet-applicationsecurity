@@ -25,7 +25,20 @@ export default defineConfig({
     ],
     server: {
         headers: {
-            'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws:;"
+            'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' http://127.0.0.1:8080 ws:;"
+        },
+        proxy: {
+            '/secureteam-access': {
+                target: 'http://127.0.0.1:8080',
+                changeOrigin: true,
+                secure: false,
+                ws: true,
+                configure: (proxy, _options) => {
+                    proxy.on('error', (err, _req, _res) => {
+                        console.log('proxy error', err);
+                    });
+                }
+            }
         }
     }
 });

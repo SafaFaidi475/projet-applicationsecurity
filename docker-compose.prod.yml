@@ -1,0 +1,90 @@
+services:
+  # Traefik: Reverse Proxy & SSL (Let's Encrypt)
+  traefik:
+    image: traefik:v3.0
+    container_name: secureteam-traefik
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=admin@yourdomain.me"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    networks:
+      - secureteam-net
+
+  # SecureTeam Backend (WildFly)
+  backend:
+    build: ./backend
+    container_name: secureteam-backend
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/secureteam_access_db
+      - DB_USER=sentinel_admin
+      - DB_PASSWORD=secure_password_123!
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.yourdomain.me`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=myresolver"
+      - "traefik.http.services.backend.loadbalancer.server.port=8080"
+    networks:
+      - secureteam-net
+
+  # SecureTeam Frontend (Nginx)
+  frontend:
+    build: ./frontend
+    container_name: secureteam-frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`yourdomain.me`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+    networks:
+      - secureteam-net
+
+  # PostgreSQL
+  postgres:
+    image: postgres:16.1
+    container_name: secureteam-postgres
+    environment:
+      POSTGRES_USER: sentinel_admin
+      POSTGRES_PASSWORD: secure_password_123!
+      POSTGRES_DB: secureteam_access_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - secureteam-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U sentinel_admin -d secureteam_access_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7.2
+    container_name: secureteam-redis
+    networks:
+      - secureteam-net
+
+networks:
+  secureteam-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  letsencrypt:

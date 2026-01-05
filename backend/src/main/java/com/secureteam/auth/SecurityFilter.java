@@ -25,6 +25,13 @@ public class SecurityFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
+        String path = requestContext.getUriInfo().getPath();
+
+        // SecureTeam Access: Allow public access to health and authentication setup
+        if (path.contains("/auth/")) {
+            return;
+        }
+
         String authHeader = requestContext.getHeaderString("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
