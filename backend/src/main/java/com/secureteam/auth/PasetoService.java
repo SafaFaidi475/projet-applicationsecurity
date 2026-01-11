@@ -10,6 +10,7 @@ import javax.crypto.SecretKey;
 import java.security.KeyPair;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.UUID;
 
 import java.util.Optional;
@@ -76,6 +77,10 @@ public class PasetoService {
                 .compact();
     }
 
+    public java.security.PublicKey getPublicKey() {
+        return keyPair.getPublic();
+    }
+
     public Paseto validatePublicToken(String token, String requiredAudience) {
         PasetoParser parser = Pasetos.parserBuilder()
                 .setPublicKey(keyPair.getPublic())
@@ -99,5 +104,19 @@ public class PasetoService {
         }
 
         return paseto;
+    }
+
+    public Map<String, Object> verifyPublicToken(String token) {
+        // Simplified version for the filter that doesn't check audience string strictly
+        // for all paths
+        PasetoParser parser = Pasetos.parserBuilder()
+                .setPublicKey(keyPair.getPublic())
+                .requireIssuer("iam.yourdomain.me")
+                .build();
+
+        Paseto paseto = parser.parse(token);
+        Map<String, Object> claims = new java.util.HashMap<>();
+        paseto.getClaims().forEach(claims::put);
+        return claims;
     }
 }

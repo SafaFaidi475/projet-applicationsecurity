@@ -1,6 +1,5 @@
 package com.secureteam.auth;
 
-import org.jboss.aerogear.security.otp.Totp;
 import org.jboss.aerogear.security.otp.api.Base32;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -29,7 +28,6 @@ public class TotpService {
                 }
             }
 
-            Totp totp = new Totp(secret);
             return false;
         } catch (Exception e) {
             e.printStackTrace();

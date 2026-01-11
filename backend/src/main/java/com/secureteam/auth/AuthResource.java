@@ -1,5 +1,6 @@
 package com.secureteam.auth;
 
+import com.secureteam.model.User;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -81,6 +82,22 @@ public class AuthResource {
         } else {
             return Response.status(Response.Status.UNAUTHORIZED).entity("MFA Invalid").build();
         }
+    }
+
+    @Inject
+    private jakarta.persistence.EntityManager em;
+
+    @POST
+    @Path("/register")
+    @PermitAll
+    @jakarta.transaction.Transactional
+    public Response register(User user) {
+        // Enforce department for ABAC
+        if (user.getDepartment() == null) {
+            user.setDepartment("engineering");
+        }
+        em.persist(user);
+        return Response.status(Response.Status.CREATED).entity("User registered successfully").build();
     }
 
     public static class MfaVerificationRequest {

@@ -7,7 +7,6 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
-import dev.paseto.jpaseto.Paseto;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -22,6 +21,9 @@ public class SecurityFilter implements ContainerRequestFilter {
 
     @Inject
     private AbacPolicyEngine abacPolicyEngine;
+
+    @Inject
+    private com.secureteam.api.AuditResource auditResource;
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -42,34 +44,29 @@ public class SecurityFilter implements ContainerRequestFilter {
         String token = authHeader.substring(7);
 
         try {
-            // 1. Verify Token (Signature + Replay Prevention + Expiry)
-            // Enforce audience "api.yourdomain.me" for internal API
-            Paseto paseto = pasetoService.validatePublicToken(token, "api.yourdomain.me");
+            // 1. Verify Token and Extract Claims
+            Map<String, Object> subject = pasetoService.verifyPublicToken(token);
 
-            // 2. Extract Claims for ABAC (SecureTeam Access Implementation)
-            Map<String, Object> subject = new HashMap<>();
-            subject.put("subject", paseto.getClaims().getSubject());
-            subject.put("department", paseto.getClaims().get("dept", String.class));
-            subject.put("access_expiry", paseto.getClaims().get("access_expiry", Long.class));
-            subject.put("projects", paseto.getClaims().get("projects", java.util.List.class));
-            subject.put("device_id", paseto.getClaims().get("device_id", String.class));
-
+            // 2. Prepare Context for ABAC
             Map<String, Object> resource = new HashMap<>();
-            resource.put("type", "secure_resource");
-            // Extract project_id from header or URL path
+            resource.put("path", path);
             String projectId = requestContext.getHeaderString("X-Project-ID");
-            resource.put("project_id", projectId);
+            if (projectId != null)
+                resource.put("project_id", projectId);
 
             Map<String, Object> env = new HashMap<>();
-            // Extract real-time device ID from header for comparison
-            env.put("device_id", requestContext.getHeaderString("X-Device-Fingerprint"));
+            env.put("device_id", requestContext.getHeaderString("X-Device-ID"));
+            env.put("ip", requestContext.getHeaderString("X-Forwarded-For"));
 
-            // 3. Enforce ABAC (Temporal & Context-Aware Decision)
+            // 3. Enforce ABAC
             if (!abacPolicyEngine.evaluate(subject, resource, env)) {
-                requestContext
-                        .abortWith(Response.status(Response.Status.FORBIDDEN)
-                                .entity("SecureTeam Access Denial: Context or Time Constraint Violated").build());
+                auditResource.logAccess((String) subject.get("subject"), path, false, "ABAC Policy Violation");
+                requestContext.abortWith(Response.status(Response.Status.FORBIDDEN)
+                        .entity("SecureTeam Access Denial: Zero Trust Policy Violation").build());
+                return;
             }
+
+            auditResource.logAccess((String) subject.get("subject"), path, true, "Authorized Access");
 
         } catch (Exception e) {
             requestContext.abortWith(Response.status(Response.Status.UNAUTHORIZED).entity("Invalid Token").build());
