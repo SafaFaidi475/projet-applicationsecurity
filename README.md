@@ -22,41 +22,25 @@
 The authentication flow utilizes Time-Based One-Time Passwords with enhanced resilience:
 *   **Clock-Drift Management**: Implements a manual verification window of **+/- 3 minutes (360s)** to ensure usability across client devices with slight time desynchronization.
 *   **Secure Seeding**: MFA secrets are generated using `SecureRandom`, Base32 encoded, and stored in **Redis** with a strict 10-minute TTL during the setup phase.
-*   **QR Integration**: Native QR Code generation via `ZXing` (Base64) for seamless onboarding with Google Authenticator, Authy, or Microsoft Authenticator.
+*   **QR Integration**: Native QR Code generation via `ZXing` (Base64) for seamless onboarding.
 
 ### 2. PASETO v2 Public (Beyond JWT)
-SentinelKey explicitly rejects JWT (JSON Web Tokens) to eliminate common vulnerabilities (e.g., identity forged via `alg:none` or key-confusion attacks).
+SentinelKey explicitly rejects JWT (JSON Web Tokens) to eliminate common vulnerabilities (e.g., identity forged via `alg:none`).
 *   **Platform-Agnostic Security Tokens (PASETO)**: Uses **v2.public** tokens (Asymmetric Ed25519 signatures).
-*   **Tamper-Proof Payload**: Signatures are handled by `Bouncy Castle`, ensuring cryptographic integrity without reliance on potentially unstable native libraries (libsodium).
-*   **Stateless with State-Full Revocation**: While tokens are stateless, **JTI (JSON Token Identity)** tracking is implemented in Redis to prevent replay attacks and allow real-time token revocation.
+*   **Tamper-Proof Payload**: Signatures are handled by `Bouncy Castle`, ensuring cryptographic integrity.
+*   **Stateless with State-Full Revocation**: **JTI (JSON Token Identity)** tracking is implemented in Redis to prevent replay attacks and allow real-time token revocation.
 
 ### 3. Moteur ABAC (Attribute-Based Access Control)
 Access decisions are computed in real-time based on a multi-dimensional matrix:
-*   **Subject**: Authenticated identity (via PASETO).
-*   **Resource**: Granular resource ID (Resource/Project level).
-*   **Action**: Capability-based (CRUD).
-*   **Environment**: Device Fingerprint (DeviceID), Source IP, and Business Hours (Temporal constraints).
+*   **Subject**: Authenticated identity with `department`, `roles`, and `authorized_projects`.
+*   **Resource**: Scoped by `project_id` and action type.
+*   **Environment**: Device ID, Source IP, and Business Hours constraints.
 
-### 4. Steganography Service (Dissimulation)
-For ultra-secure data exchange, SentinelKey includes a **Steganography Module** designed for **Least Significant Bit (LSB)** and **Discrete Cosine Transform (DCT)** embedding.
-> [!NOTE]
-> The current bridge implementation is in STUB mode to maintain environment compatibility, ready for full OpenCV integration in high-security air-gapped zones.
-
----
-
-## 🛠️ Technical Stack & Justification
-
-### Backend: Performance & Hardening
-*   **Server**: WildFly 38.0.1.Final (Jakarta EE 11) - Selected for its robust security subsystems and CDI 4.1 support.
-*   **Crypto**: Bouncy Castle (Ed25519) - Chosen over native providers for cross-platform stability (Windows/Linux).
-*   **Cache**: Redis 7.2 - Handles ephemeral secrets (TOTP) and JTI revocation lists with nanosecond latency.
-*   **Database**: PostgreSQL 16.1 - Relational integrity for identity management and audit logs.
-
-### Frontend: Modern PWA Experience
-*   **View Layer**: Lit 3.x - Lightweight Web Components for maximum performance and minimum bundle size.
-*   **Lifecycle**: Vite - For rapid development and optimized production builds.
-*   **Resilience**: Workbox PWA - Service Worker integration for offline capabilities and secure asset caching.
-*   **State**: Zustand 4.x - Minimalist and high-performance state management.
+### 4. Steganography Service (Data Dissimulation)
+SentinelKey includes a fully functional **Steganography Module** using **Least Significant Bit (LSB)** embedding.
+*   **Cover Images**: Supports PNG and BMP for lossless data hiding.
+*   **Bit-Level Precision**: Messages are embedded across RGB channels with length-prefix encoding.
+*   **Usage**: Accessible via `/api/stego/hide` and `/api/stego/extract`.
 
 ---
 
@@ -66,15 +50,16 @@ For ultra-secure data exchange, SentinelKey includes a **Steganography Module** 
 SentinelKey-Access-Broker/
 ├── frontend/                  # Lit-based PWA Dashboard
 │   ├── src/                   
-│   │   ├── auth-service.js    # PASETO handling & session logic
-│   │   └── secureteam-app.js  # Main UI Router & Components
-│   └── vite.config.js         # Security Proxy & Build config
+│   │   ├── services/          # api-client.js (Main integration layer)
+│   │   └── secureteam-app.js  # Main UI & Router
+│   └── vite.config.js         # Security Proxy
 │
 ├── backend/                   # Jakarta EE Security Engine
-│   ├── src/main/java/         
-│   │   ├── auth/              # PASETO, TOTP, Redis Logic
-│   │   ├── model/             # Identity & Security Entities
-│   │   └── steganography/     # Dissimulation Module
+│   ├── src/main/java/com/secureteam/
+│   │   ├── auth/              # Security Filter, PASETO, TOTP, ABAC Engine
+│   │   ├── api/               # User, Project, Stego, Audit, Key Resources
+│   │   ├── model/             # Identity & Project Entities
+│   │   └── steganography/     # LSB Implementation
 │   └── pom.xml                # Hardened Dependency Management
 │
 ├── infrastructure/            # Environment & CI/CD
@@ -83,57 +68,64 @@ SentinelKey-Access-Broker/
 
 ---
 
+## 🛠️ Technical Stack & Justification
+
+### Backend: Performance & Hardening
+*   **Server**: WildFly 38.0.1.Final (Jakarta EE 11) - Robust security subsystems.
+*   **Crypto**: Bouncy Castle (Ed25519) - Pure Java stability for Windows/Linux.
+*   **Audit Logging**: Native tracking of all access decisions (Granted/Denied).
+*   **Cache**: Redis 7.2 - TTL-based JTI tracking and MFA secret storage.
+
+### Frontend: Integration Layer
+*   **API Client**: Specialized `api-client.js` with automatic Bearer token injection and Device ID fingerprinting.
+*   **View Layer**: Lit 3.x for atomic, framework-agnostic components.
+
+---
+
+## 🔐 API Reference (Extended)
+
+| Endpoint | Method | Security | Description |
+| :--- | :---: | :--- | :--- |
+| `/auth/register` | `POST` | PermitAll | User registration with ABAC attributes. |
+| `/auth/mfa/verify`| `POST` | PermitAll | TOTP Validation -> PASETO Issuer. |
+| `/stego/hide` | `POST` | PASETO | Embed data in cover image. |
+| `/projects` | `GET` | ABAC | Retrieve authorized projects. |
+| `/audit` | `GET` | ADMIN | Access real-time security logs. |
+| `/keys/public` | `GET` | PermitAll | PASETO Public Key distribution. |
+
+---
+
 ## 🚀 Deployment Guide
 
-### Option A: Local Development (Manual)
-1.  **Redis**: Ensure Redis is running on `localhost:6379`.
-2.  **Backend**:
-    ```bash
-    cd backend
-    mvn clean package wildfly:run
-    ```
-3.  **Frontend**:
-    ```bash
-    cd frontend
-    npm install
-    npm run dev
-    ```
+### Option A: Local Development
+```bash
+# Backend
+cd backend && mvn clean package wildfly:run
 
-### Option B: Production (Docker Orchestration)
-The project includes a production-ready `docker-compose.prod.yml` with:
-*   **Traefik**: Reverse proxy with automatic SSL (Let's Encrypt).
-*   **Hardened Network**: Internal bridge network `secureteam-net`.
-*   **Healthchecks**: PostgreSQL readiness probes.
+# Frontend
+cd frontend && npm install && npm run dev
+```
 
+### Option B: Production (Docker)
 ```bash
 docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
 ---
 
-## 🔐 API Reference (Core)
+## 🛡️ Vulnerabilities Resolved
 
-| Endpoint | Method | Security | Description |
-| :--- | :---: | :--- | :--- |
-| `/auth/mfa/setup` | `GET` | PermitAll | Generates TOTP secret & QR Code Image. |
-| `/auth/mfa/verify` | `POST` | PermitAll | Validates TOTP code & issues PASETO token. |
-| `/auth/health` | `GET` | PermitAll | Security Engine status check. |
-
----
-
-## 🛡️ Vulnerabilities Resolved (Audit Log)
-
-| CVE / Issue | Resolution | Status |
+| Issue | Resolution | Status |
 | :--- | :--- | :---: |
-| Native Sodium Crash | Migrated to pure Java **Bouncy Castle Ed25519**. | Fixed ✅ |
-| Token Replay | Implemented **Redis JTI Tracking**. | Fixed ✅ |
-| MFA Desync | Added **+/- 3min Clock Drift tolerance**. | Optimized ✅ |
-| CORS Leakage | Implemented **Vite Secure Proxy** in dev. | Hardened ✅ |
+| Native Sodium Crash | Migrated to **Bouncy Castle Ed25519**. | Fixed ✅ |
+| Passive Authorization | Implemented **Real-time ABAC Evaluation**. | Fixed ✅ |
+| Token Replay | Implemented **Redis JTI Revocation**. | Fixed ✅ |
+| Stego Placeholder | Implemented **Functional LSB Module**. | Fixed ✅ |
 
 ---
 
 ## 📜 Licence & Versioning
-*   **Version**: 3.0.0 (Expert Edition)
+*   **Version**: 3.1.0 (Integration Edition)
 *   **License**: Proprietary - Developed for **SecureTeam Application Security**.
 *   **Contact**: [Admin SecureTeam](mailto:admin@secureteam.me)
 
