@@ -1,4 +1,4 @@
-# 🛡️ SentinelKey Access Broker (v3.0 Expert Edition)
+# 🛡️ SecureTeam Access  (v3.0 Expert Edition)
 
 **Next-Generation Zero Trust Identity & Access Management (IAM) for Critical Infrastructures.**
 
