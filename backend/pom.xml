@@ -188,6 +188,12 @@
             <version>0.12.5</version>
             <scope>runtime</scope>
         </dependency>
+                <!-- Secure Password Hashing (Argon2) -->
+        <dependency>
+            <groupId>de.mkammerer</groupId>
+            <artifactId>argon2-jvm</artifactId>
+            <version>2.14</version>
+        </dependency>
     </dependencies>
 
     <build>
