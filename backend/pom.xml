@@ -170,6 +170,12 @@
             <version>${version.mockito}</version>
             <scope>test</scope>
         </dependency>
+                <!-- Rate Limiting for Brute Force Protection -->
+        <dependency>
+            <groupId>io.github.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>7.6.0</version>
+        </dependency>
                 <!-- HTTPS/TLS Support -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
