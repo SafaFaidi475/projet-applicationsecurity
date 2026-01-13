@@ -130,4 +130,66 @@ docker-compose -f docker-compose.prod.yml up -d --build
 *   **Contact**: [Admin SecureTeam](mailto:admin@secureteam.me)
 
 ---
+Vulnérabilités Identifiées
+1. Secrets Codés en Dur (CWE-798)
+Description: Des clés d'accès (accessKey, secretKey, masterPassword) sont présentes directement dans le code source Java ou dans des fichiers de propriétés par défaut. Fichiers affectés:
+
+backend/src/main/java/com/secureteam/storage/MinioService.java
+backend/src/main/resources/META-INF/microprofile-config.properties Risque: Critique. Si le code fuit, les attaquants ont un accès total aux services de stockage et de chiffrement.
+2. Divulgation d'Informations via Logs (CWE-209)
+Description: L'application utilise System.out.println et e.printStackTrace() qui exposent des informations internes et la trace de la pile d'exécution dans la sortie standard. Fichiers affectés:
+
+backend/src/main/java/com/secureteam/auth/AuthResource.java
+backend/src/main/java/com/secureteam/auth/TotpService.java
+backend/src/main/java/com/secureteam/storage/MinioService.java
+ Risque: Moyen. Facilite la reconnaissance pour un attaquant.
+3. Implémentation TOTP Faible et Cryptographie "Maison" (CWE-327)
+Description:
+
+Le service TOTP (
+TotpService.java
+) réimplémente manuellement l'algorithme HMAC-SHA1 au lieu d'utiliser une bibliothèque éprouvée.
+La fenêtre de validation autorise une dérive de +/- 5 minutes (fenêtre de -10 à +2 * 30s), ce qui est excessif et augmente le risque d'attaques par rejou (Replay Attack). Fichiers affectés: 
+backend/src/main/java/com/secureteam/auth/TotpService.java
+ Risque: Élevé.
+4. Dépendances Obsolètes (CWE-1104)
+Description: La dépendance aerogear-otp-java est en version 1.0.0 (très ancienne). Fichiers affectés: 
+backend/pom.xml
+ Risque: Moyen.
+
+Modifications Proposées
+Backend
+1. Sécurisation des Credentials
+[MODIFY] 
+backend/src/main/java/com/secureteam/storage/MinioService.java
+: Retirer les valeurs en dur et utiliser @ConfigProperty pour injecter les secrets.
+[MODIFY] backend/src/main/resources/META-INF/microprofile-config.properties: Définir des valeurs par défaut vides ou sécurisées et documenter l'utilisation des variables d'environnement.
+2. Assainissement des Logs
+[MODIFY] 
+backend/src/main/java/com/secureteam/auth/AuthResource.java
+: Remplacer e.printStackTrace() par un Logger (JBoss Logging).
+[MODIFY] 
+backend/src/main/java/com/secureteam/auth/TotpService.java
+: Supprimer System.out.println et e.printStackTrace(). Utiliser un Logger.
+[MODIFY] 
+backend/src/main/java/com/secureteam/storage/MinioService.java
+: Supprimer les System.out.println.
+3. Renforcement TOTP
+[MODIFY] 
+backend/src/main/java/com/secureteam/auth/TotpService.java
+:
+Réduire la fenêtre de dérive à +/- 1 minute (fenêtres de -2 à +2).
+Nettoyer l'implémentation manuelle si possible ou la corriger pour être stricte.
+4. Mise à jour Dépendances
+[MODIFY] 
+backend/pom.xml
+: Mettre à jour aerogear-otp-java vers une version plus récente ou utiliser une alternative si disponible (e.g. java-otp). Après vérification, aerogear-otp est déprécié. On gardera l'implémentation manuelle mais on la sécurisera.
+Plan de Vérification
+Tests Automatisés
+Compilation du projet : mvn clean compile
+Lancement des tests unitaires existants : mvn test
+Vérification Manuelle
+Logs : Vérifier que les mots de passe n'apparaissent pas dans les logs au démarrage. Use mvn wildfly:run.
+Setup MFA : Tenter d'enregistrer un utilisateur et vérifier que le QR code est généré sans erreur.
+Verify MFA : Tester la validation TOTP avec un délai correct et incorrect (vérifier que +/- 5 minutes échoue si on réduit la fenêtre).
 *Generated with 🛡️ by SecureTeam Security Suite.*
